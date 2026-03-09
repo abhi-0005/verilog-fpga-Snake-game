@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game FPGA - Verilog Module Interconnection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 100px);
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .diagram-section {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .module-section {
+            margin-bottom: 20px;
+        }
+
+        .module-section-title {
+            background: #f0f0f0;
+            padding: 10px 15px;
+            border-left: 4px solid #667eea;
+            font-weight: bold;
+            font-size: 12px;
+            color: #1e3c72;
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+
+        .module-item {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            border-left: 3px solid #999;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        .module-item:hover {
+            background: #e7f0ff;
+            border-left-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .module-item.input {
+            border-left-color: #FF9999;
+        }
+
+        .module-item.clock {
+            border-left-color: #FFCC99;
+        }
+
+        .module-item.control {
+            border-left-color: #99CCFF;
+        }
+
+        .module-item.game {
+            border-left-color: #99FF99;
+        }
+
+        .module-item.display {
+            border-left-color: #FFFF99;
+        }
+
+        .module-item.output {
+            border-left-color: #CC99FF;
+        }
+
+        .diagram-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #network {
+            flex: 1;
+            width: 100%;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #f5f5f5;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-top: 1px solid #ddd;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .info-panel {
+            padding: 15px;
+            background: #f0f8ff;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .info-panel h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .info-panel p {
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .info-panel code {
+            background: #fff;
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #d73a49;
+            font-size: 11px;
+        }
+
+        .legend {
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid #999;
+        }
+
+        .code-view {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 11px;
+            line-height: 1.4;
+            overflow-x: auto;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-view .keyword {
+            color: #569cd6;
+        }
+
+        .code-view .string {
+            color: #ce9178;
+        }
+
+        .code-view .comment {
+            color: #6a9955;
+        }
+
+        .code-view .number {
+            color: #b5cea8;
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+
+        .status-bar {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .signal-info {
+            background: #fffacd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 11px;
+            border-left: 3px solid #ffd700;
+        }
+
+        .signal-info strong {
+            color: #1e3c72;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🐍 Snake Game FPGA - Verilog Module Interconnection Diagram</h1>
+        <p>Interactive visualization of all module connections and signal routing | Basys 3 FPGA</p>
+    </div>
+
+    <div class="main-container">
+        <div class="diagram-section">
+            <div class="diagram-header">
+                📊 Interactive Module Diagram
+                <span style="font-size: 12px; opacity: 0.8;">Double-click nodes to focus | Scroll to zoom | Drag to pan</span>
+            </div>
+            <div id="network"></div>
+            <div class="controls">
+                <button onclick="resetLayout()">🏠 Reset View</button>
+                <button onclick="focusPhysics()">⚡ Physics</button>
+                <button onclick="hierarchicalLayout()">📈 Hierarchical</button>
+                <button onclick="downloadDiagram()">⬇️ Export PNG</button>
+                <button class="secondary" onclick="showCodeView()">💻 View Code</button>
+            </div>
+            <div class="info-panel" id="infoPanel">
+                <h4>Module Information</h4>
+                <p>Click on a module to see details, ports, and connections...</p>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header">📦 Module Library</div>
+            <div class="sidebar-content">
+                <!-- Input Modules -->
+                <div class="module-section">
+                    <div class="module-section-title">🔌 INPUT SOURCES</div>
+                    <div class="module-item input" onclick="focusModule('CLK100MHZ')">
+                        CLK100MHZ<br><small>100 MHz System Clock</small>
+                    </div>
+                    <div class="module-item input" onclick="focusModule('BTNC')">
+                        BTNC<br><small>Reset Button</small>
+                    </div>
+                    <div class="module-item input" onclick="focusModule('Joystick')">
+                        Joystick Input<br><small>Analog X, Y</small>
+                    </div>
+                </div>
+
+                <!-- IP Cores -->
+                <div class="module-section">
+                    <div class="module-section-title">🔧 IP CORES</div>
+                    <div class="module-item clock" onclick="focusModule('clk_wiz_0')">
+                        clk_wiz_0<br><small>100MHz→25MHz PLL</small>
+                    </div>
+                    <div class="module-item clock" onclick="focusModule('xadc_wiz')">
+                        xadc_wiz<br><small>12-bit ADC</small>
+                    </div>
+                </div>
+
+                <!-- Control Modules -->
+                <div class="module-section">
+                    <div class="module-section-title">🎮 CONTROL MODULES</div>
+                    <div class="module-item control" onclick="focusModule('vga_controller')">
+                        vga_controller.v<br><small>640x480@60Hz</small>
+                    </div>
+                    <div class="module-item control" onclick="focusModule('joystick')">
+                        joystick.v<br><small>Direction Decoder</small>
+                    </div>
+                </div>
+
+                <!-- Game Logic -->
+                <div class="module-section">
+                    <div class="module-section-title">🐍 GAME LOGIC</div>
+                    <div class="module-item game" onclick="focusModule('snake_entity')">
+                        snake_entity.v<br><small>Movement & Collision</small>
+                    </div>
+                    <div class="module-item game" onclick="focusModule('food')">
+                        food.v<br><small>RNG & Positioning</small>
+                    </div>
+                </div>
+
+                <!-- Display Modules -->
+                <div class="module-section">
+                    <div class="module-section-title">📺 DISPLAY MODULES</div>
+                    <div class="module-item display" onclick="focusModule('score')">
+                        score.v<br><small>7-Segment Encoder</small>
+                    </div>
+                    <div class="module-item display" onclick="focusModule('hw_image_generator')">
+                        hw_image_generator.v<br><small>Master Renderer</small>
+                    </div>
+                </div>
+
+                <!-- Output -->
+                <div class="module-section">
+                    <div class="module-section-title">📺 OUTPUTS</div>
+                    <div class="module-item output" onclick="focusModule('VGA_DISP')">
+                        VGA Monitor<br><small>RGB Display</small>
+                    </div>
+                    <div class="module-item output" onclick="focusModule('SEG_DISP')">
+                        7-Seg Display<br><small>Score Output</small>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-title">Legend</div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9999;"></div>
+                        <span>Input Sources</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFCC99;"></div>
+                        <span>Clock Generation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #99CCFF;"></div>
+                        <span>Control Modules</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #99FF99;"></div>
+                        <span>Game Logic</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFFF99;"></div>
+                        <span>Display Logic</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #CC99FF;"></div>
+                        <span>Output Devices</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+        ✓ Module interconnection diagram loaded | Modules connected via signal routing
+    </div>
+
+    <script>
+        // Module Definitions with Verilog Details
+        const modules = {
+            'snake_game_top': {
+                label: 'snake_game_top.v',
+                type: 'top',
+                color: '#E8D4F8',
+                description: 'Top-Level Module',
+                details: `module snake_game_top (
+  input CLK100MHZ,
+  input BTNC,
+  input JA1, JA2,
+  output [3:0] VGA_R/G/B,
+  output VGA_HS, VGA_VS,
+  output [6:0] CA-CF,
+  output [7:0] AN
+);
+// Port mapping hub
+// Instantiates all components`,
+                ports: 'Inputs: CLK100MHZ, BTNC, JA1, JA2 | Outputs: RGB, VGA sync, Display'
+            },
+            'CLK100MHZ': {
+                label: 'CLK100MHZ',
+                type: 'input',
+                color: '#FF9999',
+                description: '100 MHz System Clock',
+                details: `Basys 3 On-Board Oscillator
+Frequency: 100 MHz
+Pin: E3
+LVCMOS33 Standard
+Distribution hub for all timing`,
+                ports: 'Input only - Primary clock source'
+            },
+            'BTNC': {
+                label: 'BTNC',
+                type: 'input',
+                color: '#FF9999',
+                description: 'Reset Button',
+                details: `Center button on Basys 3
+Active High Reset
+Pin: U13
+LVCMOS33 Standard
+Asynchronous reset distribution`,
+                ports: 'Input only - Reset signal'
+            },
+            'Joystick': {
+                label: 'Joystick Input',
+                type: 'input',
+                color: '#FF9999',
+                description: 'Analog Joystick Input',
+                details: `Pmod ADC Connector
+Analog X-axis (JA1)
+Analog Y-axis (JA2)
+12-bit resolution
+ADC sampling: 100+ kHz`,
+                ports: 'Analog inputs - X, Y axes'
+            },
+            'clk_wiz_0': {
+                label: 'clk_wiz_0',
+                type: 'clock',
+                color: '#FFCC99',
+                description: 'Xilinx Clock Wizard IP',
+                details: `IP Core: Clocking Wizard
+Input: 100 MHz
+Output: 25 MHz (Pixel Clock)
+PLL-based generation
+Locked output signal`,
+                ports: 'Input: 100MHz | Output: 25MHz'
+            },
+            'xadc_wiz': {
+                label: 'xadc_wiz',
+                type: 'clock',
+                color: '#FFCC99',
+                description: 'Xilinx ADC IP',
+                details: `IP Core: XADC Wizard
+12-bit SAR ADC
+8 Channels available
+CH0: Joystick X
+CH1: Joystick Y`,
+                ports: 'Analog inputs | Digital outputs (12-bit)'
+            },
+            'vga_controller': {
+                label: 'vga_controller.v',
+                type: 'control',
+                color: '#99CCFF',
+                description: 'VGA Timing Controller',
+                details: `module vga_controller #(
+  parameter h_pulse = 144,
+  parameter h_bp = 216,
+  parameter h_pixels = 1368,
+  parameter h_fp = 72,
+  ...
+);
+Generates VGA sync pulses
+640x480 @ 60Hz timing
+Pixel counters
+Display enable signal`,
+                ports: 'Input: pixel_clk, reset_n | Output: h_sync, v_sync, disp_ena, column, row'
+            },
+            'joystick': {
+                label: 'joystick.v',
+                type: 'control',
+                color: '#99CCFF',
+                description: 'Joystick Input Module',
+                details: `module joystick (
+  input clock,
+  input reset,
+  output [1:0] direction
+);
+ADC data acquisition
+Threshold detection:
+  homeX = 2008, homeY = 1978
+  tolerance = 400
+Direction mapping:
+  00 = Up, 01 = Right
+  10 = Left, 11 = Down`,
+                ports: 'Input: clock, reset | Output: direction[1:0]'
+            },
+            'snake_entity': {
+                label: 'snake_entity.v',
+                type: 'game',
+                color: '#99FF99',
+                description: 'Snake Game Engine',
+                details: `module snake_entity (
+  input clock, reset,
+  input [15:0] food_x/y,
+  input [1:0] direction,
+  output snake_out[3199:0],
+  output [9:0] snake_len_out,
+  output gameOver_out,
+  output [2:0] lives_out
+);
+Snake array: 100 max segments
+Movement logic (4 directions)
+Collision detection
+Lives counter (3 bits)
+Growth on food eat`,
+                ports: 'In: clock, reset, food_x/y, direction | Out: snake_out, snake_len, gameOver, lives'
+            },
+            'food': {
+                label: 'food.v',
+                type: 'game',
+                color: '#99FF99',
+                description: 'Food Generator Module',
+                details: `module food (
+  input clock, reset,
+  output [15:0] food_x, food_y,
+  input snake_in[3199:0]
+);
+LFSR Random Number Generator
+Seed: 0xACE1
+Taps: [15,13,12,10]
+Food position grid: 32x20
+Collision detection`,
+                ports: 'In: clock, reset, snake_in | Out: food_x, food_y'
+            },
+            'score': {
+                label: 'score.v',
+                type: 'display',
+                color: '#FFFF99',
+                description: '7-Segment Score Encoder',
+                details: `module score (
+  input [9:0] point,
+  output [6:0] display_r,
+  output [6:0] display_l,
+  ...
+);
+7-segment LUT table
+Digit conversion
+Active-low logic
+Displays: 0-9, C, F, U, -`,
+                ports: 'Input: point[9:0] | Output: display_*[6:0]'
+            },
+            'hw_image_generator': {
+                label: 'hw_image_generator.v',
+                type: 'display',
+                color: '#FFFF99',
+                description: 'Master Image Rendering Engine',
+                details: `module hw_image_generator (
+  input clock, clock_ADC, reset,
+  input disp_ena, row, column,
+  output [3:0] red/green/blue,
+  output display_*
+);
+Master rendering engine
+Combines all game state
+Pixel generation
+Clock division (~100 Hz)
+Instantiates: snake, food,
+joystick, score modules`,
+                ports: 'In: clocks, reset, coords | Out: RGB, display codes'
+            },
+            'VGA_DISP': {
+                label: 'VGA Monitor',
+                type: 'output',
+                color: '#CC99FF',
+                description: 'VGA Display Output',
+                details: `Standard VGA Monitor
+Resolution: 640x480
+Refresh Rate: 60 Hz
+Color: 4-bit RGB per channel
+16 total colors
+Connections:
+  - red[3:0], green[3:0], blue[3:0]
+  - h_sync, v_sync`,
+                ports: 'Inputs only - RGB + sync signals'
+            },
+            'SEG_DISP': {
+                label: '7-Segment Display',
+                type: 'output',
+                color: '#CC99FF',
+                description: '7-Segment Score Display',
+                details: `6 displays available (CA-CF)
+Active-low logic
+Displays: 0-9, C, F, U, -
+Score display format:
+  CA: Ones digit
+  CB: Tens digit
+  CC-CF: Fixed text`,
+                ports: 'Inputs only - Display codes (active-low)'
+            }
+        };
+
+        // Connection definitions
+        const connections = [
+            // Clock distribution
+            { from: 'CLK100MHZ', to: 'clk_wiz_0', label: 'clk_in (100MHz)', type: 'clock' },
+            { from: 'clk_wiz_0', to: 'vga_controller', label: 'pixel_clk (25MHz)', type: 'clock' },
+            { from: 'CLK100MHZ', to: 'joystick', label: 'sample_clk (100MHz)', type: 'clock' },
+            
+            // Reset distribution
+            { from: 'BTNC', to: 'snake_entity', label: 'async_reset', type: 'reset' },
+            { from: 'BTNC', to: 'food', label: 'async_reset', type: 'reset' },
+            { from: 'BTNC', to: 'joystick', label: 'async_reset', type: 'reset' },
+            
+            // Joystick pipeline
+            { from: 'Joystick', to: 'xadc_wiz', label: 'analog_xy', type: 'data' },
+            { from: 'xadc_wiz', to: 'joystick', label: 'CH0, CH1 (12-bit)', type: 'data' },
+            { from: 'joystick', to: 'snake_entity', label: 'direction[1:0]', type: 'control' },
+            
+            // VGA pipeline
+            { from: 'vga_controller', to: 'hw_image_generator', label: 'column, row, disp_ena', type: 'control' },
+            
+            // Game logic
+            { from: 'snake_entity', to: 'food', label: 'snake_head_pos', type: 'data' },
+            { from: 'food', to: 'snake_entity', label: 'food_x, food_y', type: 'data' },
+            { from: 'snake_entity', to: 'hw_image_generator', label: 'snake_out[3199:0]', type: 'data' },
+            { from: 'snake_entity', to: 'score', label: 'snake_len_out[9:0]', type: 'data' },
+            { from: 'food', to: 'hw_image_generator', label: 'food_x, food_y', type: 'data' },
+            
+            // Display output
+            { from: 'hw_image_generator', to: 'VGA_DISP', label: 'red[3:0], green[3:0], blue[3:0]', type: 'output' },
+            { from: 'vga_controller', to: 'VGA_DISP', label: 'h_sync, v_sync', type: 'output' },
+            { from: 'score', to: 'SEG_DISP', label: 'display_*[6:0]', type: 'output' },
+            
+            // Top-level connections
+            { from: 'snake_game_top', to: 'vga_controller', label: 'instantiate', type: 'internal' },
+            { from: 'snake_game_top', to: 'hw_image_generator', label: 'instantiate', type: 'internal' },
+            { from: 'snake_game_top', to: 'clk_wiz_0', label: 'instantiate', type: 'internal' }
+        ];
+
+        // Create nodes
+        const nodes = new vis.DataSet();
+        const colorMap = {
+            'input': '#FF9999',
+            'clock': '#FFCC99',
+            'control': '#99CCFF',
+            'game': '#99FF99',
+            'display': '#FFFF99',
+            'output': '#CC99FF',
+            'top': '#E8D4F8'
+        };
+
+        for (const [key, module] of Object.entries(modules)) {
+            nodes.add({
+                id: key,
+                label: module.label,
+                color: {
+                    background: module.color,
+                    border: '#333',
+                    highlight: {
+                        background: '#fff',
+                        border: '#667eea'
+                    }
+                },
+                font: { size: 14, face: 'Courier New', bold: { size: 16 } },
+                shape: 'box',
+                margin: 12,
+                widthConstraint: { maximum: 140 },
+                title: module.description,
+                borderWidth: 2.5,
+                shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 10, x: 5, y: 5 }
+            });
+        }
+
+        // Create edges
+        const edges = new vis.DataSet();
+        const edgeColors = {
+            'clock': '#FF6B6B',
+            'reset': '#FF8C42',
+            'control': '#4ECDC4',
+            'data': '#45B7D1',
+            'output': '#96CEB4',
+            'internal': '#999999'
+        };
+
+        connections.forEach((conn, idx) => {
+            edges.add({
+                id: idx,
+                from: conn.from,
+                to: conn.to,
+                label: conn.label,
+                color: { color: edgeColors[conn.type], highlight: '#667eea' },
+                font: { size: 10, align: 'middle', color: '#333' },
+                arrows: 'to',
+                smooth: { type: 'continuous' },
+                width: 2,
+                title: `${conn.from} → ${conn.to}: ${conn.label}`
+            });
+        });
+
+        // Network options
+        const options = {
+            physics: {
+                enabled: true,
+                barnesHut: {
+                    gravitationalConstant: -35000,
+                    centralGravity: 0.25,
+                    springLength: 300,
+                    springConstant: 0.05
+                },
+                stabilization: {
+                    iterations: 200
+                }
+            },
+            interaction: {
+                zoomView: true,
+                dragView: true,
+                navigationButtons: true,
+                keyboard: true
+            }
+        };
+
+        // Create network
+        const container = document.getElementById('network');
+        const data = { nodes: nodes, edges: edges };
+        const network = new vis.Network(container, data, options);
+
+        // Control functions
+        function focusModule(moduleId) {
+            const module = modules[moduleId];
+            if (module) {
+                network.focus(moduleId, { scale: 1.5, animation: true });
+                updateInfoPanel(module, moduleId);
+            }
+        }
+
+        function updateInfoPanel(module, moduleId) {
+            const panel = document.getElementById('infoPanel');
+            const codeSnippet = module.details.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            panel.innerHTML = `
+                <h4>${module.description}</h4>
+                <p><strong>Module:</strong> <code>${moduleId}</code></p>
+                <p><strong>Type:</strong> ${module.type.toUpperCase()}</p>
+                <p><strong>Ports:</strong> ${module.ports}</p>
+                <div class="code-view">${codeSnippet}</div>
+            `;
+        }
+
+        function resetLayout() {
+            network.fit();
+            document.getElementById('statusBar').textContent = '✓ View reset to default layout';
+        }
+
+        function focusPhysics() {
+            network.setOptions({ physics: { enabled: true, stabilization: { iterations: 200 } } });
+            setTimeout(() => {
+                network.setOptions({ physics: { enabled: false } });
+                document.getElementById('statusBar').textContent = '✓ Physics simulation completed';
+            }, 5000);
+        }
+
+        function hierarchicalLayout() {
+            network.setOptions({
+                physics: {
+                    enabled: true,
+                    hierarchicalRepulsion: {
+                        centralGravity: 0,
+                        springLength: 200,
+                        springConstant: 0.04
+                    }
+                },
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        levelSeparation: 200,
+                        nodeSpacing: 200,
+                        direction: 'UD'
+                    }
+                }
+            });
+            setTimeout(() => {
+                network.setOptions({ physics: { enabled: false } });
+                document.getElementById('statusBar').textContent = '✓ Hierarchical layout applied';
+            }, 3000);
+        }
+
+        function downloadDiagram() {
+            const canvas = document.querySelector('canvas');
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'verilog_interconnection_diagram.png';
+            link.click();
+            document.getElementById('statusBar').textContent = '✓ Diagram exported as PNG';
+        }
+
+        function showCodeView() {
+            alert('View code for modules in the info panel by clicking on module items in the sidebar.');
+        }
+
+        // Network event listeners
+        network.on('click', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const module = modules[nodeId];
+                if (module) {
+                    updateInfoPanel(module, nodeId);
+                }
+            }
+        });
+
+        network.on('doubleClick', function(params) {
+            if (params.nodes.length > 0) {
+                focusModule(params.nodes[0]);
+            }
+        });
+
+        // Initial setup
+        network.fit();
+        document.getElementById('statusBar').textContent = '✓ Ready - Click modules to view details | Double-click to focus';
+    </script>
+</body>
+</html>
