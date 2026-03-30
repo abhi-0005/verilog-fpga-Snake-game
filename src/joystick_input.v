@@ -1,28 +1,53 @@
-module joystick (
-    input wire clk,
-    input wire reset,
-    input wire [11:0] adc_x,
-    input wire [11:0] adc_y,
-    output reg [1:0] direction
+module snake_game_top (
+    input wire CLK100MHZ,
+    input wire BTNC,  // Center button for Reset
+    input wire BTNU,  // Up
+    input wire BTND,  // Down
+    input wire BTNL,  // Left
+    input wire BTNR,  // Right
+    output wire [3:0] VGA_R,
+    output wire [3:0] VGA_G,
+    output wire [3:0] VGA_B,
+    output wire VGA_HS,
+    output wire VGA_VS,
+    output wire [6:0] CA,
+    output wire [6:0] CB
 );
 
-    localparam CENTER_X = 12'd2008;
-    localparam CENTER_Y = 12'd1978;
-    localparam TOLERANCE = 12'd400;
+    wire pixel_clk;
+    wire reset;
+    wire [1:0] direction;
+    wire [15:0] food_x, food_y;
     
-    always @(posedge clk or posedge reset) begin
-        if (reset)
-            direction <= 2'b00;
-        else begin
-            if (adc_x > (CENTER_X + TOLERANCE))
-                direction <= 2'b01;   // Right
-            else if (adc_x < (CENTER_X - TOLERANCE))
-                direction <= 2'b10;   // Left
-            else if (adc_y > (CENTER_Y + TOLERANCE))
-                direction <= 2'b11;   // Down
-            else if (adc_y < (CENTER_Y - TOLERANCE))
-                direction <= 2'b00;   // Up
-        end
-    end
+    assign reset = BTNC; // Basys 3 buttons are active-high
+    
+    // Connect the new button controller
+    button_controller control_inst (
+        .clk(CLK100MHZ),
+        .reset(reset),
+        .btnU(BTNU),
+        .btnD(BTND),
+        .btnL(BTNL),
+        .btnR(BTNR),
+        .direction(direction)
+    );
+    
+    vga_controller vga_inst (
+        .pixel_clk(pixel_clk),
+        .reset_n(~reset), // VGA usually expects active-low reset_n
+        .h_sync(VGA_HS),
+        .v_sync(VGA_VS)
+    );
+    
+    snake_entity snake_inst (
+        .clk(pixel_clk),
+        .reset(reset),
+        .direction(direction),
+        .food_x(food_x),
+        .food_y(food_y)
+    );
+
+    // Note: You will need to add your Score Display logic here 
+    // to drive CA and CB if that is part of your project.
 
 endmodule
