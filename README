@@ -1,0 +1,101 @@
+# Verilog FPGA Snake Game (Basys 3)
+
+Interactive Snake game implemented in **Verilog HDL** for the **Digilent Basys 3** FPGA board, with VGA output and push-button controls.
+
+## Repository
+- **Repo:** `abhi-0005/verilog-fpga-Snake-game`
+- **Description:** Interactive Verilog Module Interconnection Diagram
+- **Languages:** Verilog, Tcl
+
+---
+
+## Features
+- Real-time Snake movement on VGA display
+- Direction control using Basys 3 push buttons (U/D/L/R)
+- Reset using center button
+- Debounced button inputs
+- Game logic:
+  - Border collision detection
+  - Self collision detection
+  - Food collision and snake growth
+- 7-segment score output (if enabled)
+
+---
+
+## Hardware & Tools
+- **FPGA Board:** Digilent Basys 3 (Artix-7)
+- **HDL:** Verilog
+- **Constraints:** XDC / Tcl
+- **Tool:** Xilinx Vivado
+
+---
+
+## Top-Level I/O
+### Inputs
+- `CLK100MHZ`
+- `BTNC` (Reset)
+- `BTNU`, `BTND`, `BTNL`, `BTNR` (Direction controls)
+
+### Outputs
+- `VGA_R[3:0]`, `VGA_G[3:0]`, `VGA_B[3:0]`
+- `VGA_HS`, `VGA_VS`
+- `CA[6:0]`, `CB[6:0]` (7-segment display segments)
+
+---
+
+## Module Overview
+- `snake_game_top` — top-level integration
+- `snake_entity` — snake movement, growth, collision logic
+- `vga_controller` — VGA timing and rendering
+- `clk_div_25mhz` — pixel clock generation
+- `debouncer` — stable button input generation
+- `seg7_controller` — score display logic (if used)
+- `food_generator` — food position update (if used)
+
+---
+
+## Build & Run (Vivado)
+1. Open the project in Vivado.
+2. Ensure all source files (`.v`) are added.
+3. Ensure constraints (`.xdc`) include clock, buttons, VGA, and 7-segment mappings.
+4. Run:
+   - **Synthesis**
+   - **Implementation**
+   - **Generate Bitstream**
+5. Connect Basys 3 via USB and turn power ON.
+6. Open **Hardware Manager** → **Open Target** → **Auto Connect**.
+7. Right click device → **Program Device** → select latest `.bit`.
+
+---
+
+## Controls
+- `BTNU` = Up  
+- `BTND` = Down  
+- `BTNL` = Left  
+- `BTNR` = Right  
+- `BTNC` = Reset
+
+---
+
+## Notes
+- VGA target timing: **640x480 @ 60Hz** (25 MHz pixel clock)
+- Keep food coordinates aligned to game grid (e.g., 16-pixel cells)
+- Direction logic should prevent immediate opposite turns for better gameplay
+
+---
+
+## Future Improvements
+- Render full snake body with better graphics
+- Food respawn avoiding snake body overlap
+- Start menu and game-over screen
+- Dynamic speed increase with score
+- Dedicated testbenches for each module
+
+---
+
+## Author
+- **Abhinav Joshi**
+- **GitHub:** [@abhi-0005](https://github.com/abhi-0005)
+
+## License
+Add a `LICENSE` file (MIT / Apache-2.0 / etc.) based on your preference.
