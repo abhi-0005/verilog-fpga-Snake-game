@@ -118,7 +118,6 @@ module vga_controller (
             vga_b = 4'h0;
 
         end else if (game_over) begin
-            // Flash red and black
             if (flash) begin
                 vga_r = 4'hF;
                 vga_g = 4'h0;
@@ -131,32 +130,27 @@ module vga_controller (
 
         end else if (h_count < BORDER || h_count >= H_VISIBLE - BORDER ||
                      v_count < BORDER || v_count >= V_VISIBLE - BORDER) begin
-            // White border
             vga_r = 4'hF;
             vga_g = 4'hF;
             vga_b = 4'hF;
 
         end else if (head_pixel) begin
-            // Snake head - bright green
             vga_r = 4'h0;
             vga_g = 4'hF;
             vga_b = 4'h0;
 
         end else if (snake_pixel) begin
-            // Snake body - dark green
             vga_r = 4'h0;
             vga_g = 4'h7;
             vga_b = 4'h0;
 
         end else if (h_count >= food_x && h_count < food_x + CELL &&
                      v_count >= food_y && v_count < food_y + CELL) begin
-            // Food - red
             vga_r = 4'hF;
             vga_g = 4'h0;
             vga_b = 4'h0;
 
         end else begin
-            // Background - black
             vga_r = 4'h0;
             vga_g = 4'h0;
             vga_b = 4'h0;
