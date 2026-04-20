@@ -27,13 +27,17 @@ module snake_entity (
     localparam CELL           = 16'd16;
     localparam STARTUP_DELAY  = 32'd100000000;
 
-    integer i;
+    integer i, k;
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             length          <= 10'd1;
             snake_x[0]      <= 16'd160;
             snake_y[0]      <= 16'd160;
+            for (k = 1; k < 100; k = k + 1) begin
+                snake_x[k] <= 16'd160;
+                snake_y[k] <= 16'd160;
+            end
             speed_counter   <= 32'b0;
             startup_counter <= 32'b0;
             game_over       <= 0;
@@ -110,13 +114,18 @@ module snake_entity (
         end
     end
 
-    // Pack all segments into snake_out using generate
+    // Pack all segments - unused ones hidden at head position
     genvar g;
     generate
         for (g = 0; g < 100; g = g + 1) begin : pack_seg
             always @(*) begin
-                snake_out[(99-g)*32 + 31 : (99-g)*32 + 16] = snake_x[g];
-                snake_out[(99-g)*32 + 15 : (99-g)*32]      = snake_y[g];
+                if (g < length) begin
+                    snake_out[(99-g)*32 + 31 : (99-g)*32 + 16] = snake_x[g];
+                    snake_out[(99-g)*32 + 15 : (99-g)*32]      = snake_y[g];
+                end else begin
+                    snake_out[(99-g)*32 + 31 : (99-g)*32 + 16] = snake_x[0];
+                    snake_out[(99-g)*32 + 15 : (99-g)*32]      = snake_y[0];
+                end
             end
         end
     endgenerate
